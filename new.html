@@ -1,5 +1,3 @@
-general_report\
-
 <?php
 include('../config/config.php');
 include(header_path);
@@ -7,6 +5,20 @@ include(header_path);
 
 $dog_obj = new User;
 
+
+$my_list = [
+    ['label' => 'Total Dogs', 'table' => 'tbl_dog_profile', 'conditions' => [], 'description' => 'Total Dogs'],
+    ['label' => 'Male Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['gender' => 'M'], 'description' => 'Male Dogs'],
+    ['label' => 'Female Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['gender' => 'F'], 'description' => 'Female Dogs'],
+    ['label' => 'Workable Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['is_workable' => 'Y'], 'description' => 'Workable Dogs'],
+    ['label' => 'Expired Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['is_workable' => 'N'], 'description' => 'Demised Dogs'],
+    ['label' => 'Small Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['ag_id_fk' => '1'], 'description' => 'सानो कुकुर'],
+    ['label' => 'Big Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['ag_id_fk' => '2'], 'description' => 'ठूलो कुकुर'],
+    ['label' => 'Non Native Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['father_name' => '-'], 'description' => 'Non Native Dogs'],
+    ['label' => 'Dog Trades', 'table' => 'def_trade_category', 'conditions' => ['tc_status' => 'Y'], 'description' => 'Active Trades'],
+    // Example for using tbl_dog_breed
+    ['label' => 'Popular Breeds', 'table' => 'def_dog_types', 'conditions' => [], 'description' => 'Popular Breeds'],
+]
 
 
 ?>
@@ -43,170 +55,32 @@ $dog_obj = new User;
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
-                    <!-- Small boxes (Stat box) -->
+                    <!-- Small boxes (StMat box) -->
                     <div class="row">
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $total_dogs = $dog_obj->getCount('tbl_dog_profile', []); ?>
-                                    <h3><?php echo $total_dogs; ?></h3>
-                                    <p>Total Dogs</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
+
+                        <?php foreach ($my_list as $stat) {
+                            // Get the count for each condition in the corresponding table
+                            $count = $dog_obj->getCount($stat['table'], $stat['conditions']);
+                        ?>
+                            <div class="col-lg-3 col-6">
+                                <!-- small box -->
+                                <div class="small-box bg-info">
+                                    <div class="inner" style="background-color: #797d7f ; border:2px solid">
+
+                                        <h3><?php echo $count; ?></h3>
+                                        <p><?php echo $stat['description']; ?></p>
+                                    </div>
+                                    <div class="icon">
+                                        <i class="ion ion-bag"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        <?php
+                        }
+                        ?>
 
 
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $male_dogs = $dog_obj->getCount('tbl_dog_profile',['gender' => 'M']); ?>
-                                    <h3><?php echo $male_dogs; ?></h3>
-                                    <p>Male Dogs</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $female_dogs = $dog_obj->getCount('tbl_dog_profile',['gender' => 'F']); ?>
-                                    <h3><?php echo $female_dogs; ?></h3>
-                                    <p>Female Dogs</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $workable_dogs = $dog_obj->getCount('tbl_dog_profile',['is_workable' => 'Y']); ?>
-                                    <h3><?php echo $workable_dogs; ?></h3>
-                                    <p>Workable Dogs</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $expired_dogs = $dog_obj->getCount('tbl_dog_profile', ['is_workable' => 'N']); ?>
-                                    <h3><?php echo $expired_dogs; ?></h3>
-                                    <p>Demised Dogs</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $dog_breeds = $dog_obj->getCount('def_dog_types', ['ht_status' => 'Y']); ?>
-                                    <h3><?php echo $dog_breeds; ?></h3>
-                                    <p>Number of Breeds</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $trades = $dog_obj->getCount('def_trade_category', ['tc_status' => 'Y']); ?>
-                                    <h3><?php echo $trades; ?></h3>
-                                    <p>Active Trades for Dog</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $small_dog = $dog_obj->getCount('tbl_dog_profile', ['ag_id_fk' => '1']); ?>
-                                    <h3><?php echo $small_dog; ?></h3>
-                                    <p>सानो कुकुर</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $small_dog = $dog_obj->getCount('tbl_dog_profile', ['ag_id_fk' => '2']); ?>
-                                    <h3><?php echo $small_dog; ?></h3>
-                                    <p>ठूलो कुकुर</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-6">
-                            <!-- small box -->
-                            <div class="small-box bg-info">
-                                <div class="inner" style="background-color: #797d7f ; border:2px solid">
-                                    <?php
-                                    // $conditions = ['gender' => 'M'];
-                                    $non_native_dogs = $dog_obj->getCount('tbl_dog_profile', ['father_name' => '-']); ?>
-                                    <h3><?php echo $non_native_dogs; ?></h3>
-                                    <p>Non Native Dogs</p>
-                                </div>
-                                <div class="icon">
-                                    <i class="ion ion-bag"></i>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
 
@@ -223,31 +97,3 @@ $dog_obj = new User;
     <?php
     include(footer_path);
     ?>
-
-     public function getCount($table, $conditions = [])
-    {
-        $sql = "SELECT COUNT(*) as total FROM $table";
-        if (!empty($conditions)) {
-            $whereClauses = [];
-            $params = [];
-            foreach ($conditions as $column => $value) {
-                $whereClauses[] = "$column = :$column";
-                $params[":$column"] = $value;
-            }
-            if (!empty($whereClauses)) {
-                $sql .= " WHERE " . implode(" AND ", $whereClauses);
-            }
-        }
-        $stmt = $this->dog_conn->prepare($sql);
-        if (!empty($params)) {
-            foreach ($params as $param => $value) {
-                $stmt->bindParam($param, $value);
-            }
-        }
-        $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $test_count = $result['total'];
-        return $test_count;
-        // echo $sql;
-    }
-
