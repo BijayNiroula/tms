@@ -223,3 +223,31 @@ $dog_obj = new User;
     <?php
     include(footer_path);
     ?>
+
+     public function getCount($table, $conditions = [])
+    {
+        $sql = "SELECT COUNT(*) as total FROM $table";
+        if (!empty($conditions)) {
+            $whereClauses = [];
+            $params = [];
+            foreach ($conditions as $column => $value) {
+                $whereClauses[] = "$column = :$column";
+                $params[":$column"] = $value;
+            }
+            if (!empty($whereClauses)) {
+                $sql .= " WHERE " . implode(" AND ", $whereClauses);
+            }
+        }
+        $stmt = $this->dog_conn->prepare($sql);
+        if (!empty($params)) {
+            foreach ($params as $param => $value) {
+                $stmt->bindParam($param, $value);
+            }
+        }
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $test_count = $result['total'];
+        return $test_count;
+        // echo $sql;
+    }
+
