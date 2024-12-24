@@ -152,3 +152,21 @@ $dog_obj = new User;
 
         });
     </script>
+    AGADSFSdsa]
+    <?php
+
+include('../config/config.php');
+// include(header_path);
+
+// $dog_obj = new User;
+// header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $tc_value = isset($_POST['tc_value']) ? $_POST['tc_value'] : [];
+    // echo json_encode(['test' => 'my error cdoe']);
+    echo json_encode(['test' => $tc_value]);
+    // $conditions = ['ht_id_fk' => $tc_value];
+    // $response = $dog_obj -> select('tbl_dog_profile', $conditions, 'full_name');
+    // $name = $response['full_name'];
+
+}
+
