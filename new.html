@@ -1,38 +1,36 @@
+filter_report
 <?php
 include('../config/config.php');
 include(header_path);
-
-
 $dog_obj = new User;
-
-
-$my_list = [
-    ['label' => 'Total Dogs', 'table' => 'tbl_dog_profile', 'conditions' => [], 'description' => 'Total Dogs'],
-    ['label' => 'Male Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['gender' => 'M'], 'description' => 'Male Dogs'],
-    ['label' => 'Female Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['gender' => 'F'], 'description' => 'Female Dogs'],
-    ['label' => 'Workable Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['is_workable' => 'Y'], 'description' => 'Workable Dogs'],
-    ['label' => 'Expired Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['is_workable' => 'N'], 'description' => 'Demised Dogs'],
-    ['label' => 'Small Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['ag_id_fk' => '1'], 'description' => 'सानो कुकुर'],
-    ['label' => 'Big Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['ag_id_fk' => '2'], 'description' => 'ठूलो कुकुर'],
-    ['label' => 'Non Native Dogs', 'table' => 'tbl_dog_profile', 'conditions' => ['father_name' => '-'], 'description' => 'Non Native Dogs'],
-    ['label' => 'Dog Trades', 'table' => 'def_trade_category', 'conditions' => ['tc_status' => 'Y'], 'description' => 'Active Trades'],
-    // Example for using tbl_dog_breed
-    ['label' => 'Popular Breeds', 'table' => 'def_dog_types', 'conditions' => [], 'description' => 'Popular Breeds'],
-]
-
-
 ?>
+<style>
+    /* Change background color and font color of selected options */
+    .select2-selection__choice {
+        background-color: #424c56 !important;
+        /* Green background */
+        color: white !important;
+        /* White text */
+    }
 
+    /* Optional: Change the background of the dropdown menu when it's open */
+    .select2-results__option[aria-selected=true] {
+        background-color: #424c56 !important;
+        color: white !important;
+    }
 
+    /* Optional: Change the border color of the dropdown */
+    .select2-selection {
+        border-color: #424c56 !important;
+    }
+</style>
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
 
         <?php include_once(navbar_path) ?>
-
         <?php include_once(sidebar_path) ?>
 
-        <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
             <!-- Content Header (Page header) -->
             <div class="content-header">
@@ -55,45 +53,102 @@ $my_list = [
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
-                    <!-- Small boxes (StMat box) -->
                     <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-control tradeCategroy" name="subcategories[]" multiple="multiple">
+                                <?php
+                                $conditions = ['tc_status' => 'Y'];
+                                $subcatdata = $dog_obj->select('def_trade_category', $conditions, 'trade_category_nep, tc_id');
+                                foreach ($subcatdata as $scd): ?>
+                                    <option value="<?php echo $scd['tc_id']; ?>"><?php echo $scd['trade_category_nep']; ?></option>
+                                <?php endforeach ?>
 
-                        <?php foreach ($my_list as $stat) {
-                            // Get the count for each condition in the corresponding table
-                            $count = $dog_obj->getCount($stat['table'], $stat['conditions']);
-                        ?>
-                            <div class="col-lg-3 col-6">
-                                <!-- small box -->
-                                <div class="small-box bg-info">
-                                    <div class="inner" style="background-color: #797d7f ; border:2px solid">
+                                <!-- <option value="volvo">Volvo</option>
+                                <option value="saab">Saab</option>
+                                <option value="fiat">Fiat</option>
+                                <option value="audi">Audi</option> -->
+                            </select>
 
-                                        <h3><?php echo $count; ?></h3>
-                                        <p><?php echo $stat['description']; ?></p>
-                                    </div>
-                                    <div class="icon">
-                                        <i class="ion ion-bag"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php
-                        }
-                        ?>
+                        </div>
 
+                        
+                        <div class="col-md-3">
 
+                        </div>
 
                     </div>
 
 
                     <!-- Main row -->
                     <div class="row">
-
+                        <table class="table table-bordered d-none" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Trade</th>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                        <div class="col-md-6 mt-4">
+                            <canvas id="myChart" style="width:100%;max-width:600px"></canvas>
+                        </div>
                     </div>
                     <!-- /.row (main row) -->
                 </div>
             </section>
         </div>
     </div>
-
     <?php
     include(footer_path);
     ?>
+
+    <script>
+        $(document).ready(function() {
+            $('.tradeCategroy').select2({
+                placeholder: "Choose Trade",
+                allowClear: true
+            });
+
+            function sendFilterData() {
+                var tc_value = $('.tradeCategroy').val()
+                console.log($('.tradeCategroy').val());
+                $.ajax({
+                    url: '<?php echo base_url ?>d_pages/report_ajax.php',
+                    type: 'POST',
+                    data: {
+                        tc_value: tc_value
+                    },
+                    success: function(response) {
+                        console.log(response);
+                    //     let tableRows = '';
+                    //     $.each(response.data, function(index, row) {
+                    //         tableRows += `
+                    //     <tr>
+                    //         <td>${row.trade_name}</td>
+                    //         <td>${row.status_name}</td>
+                    //         <td>${row.count}</td>
+                    //     </tr>
+                    // `;
+                    //     });
+                    //     $('#resultsTable tbody').html(tableRows);
+                    //     // if (response.data.length > 0) {
+                        //     $('#resultsTable').removeClass('d-none');
+                        // } else {
+                        //     // Optionally, handle the case when no data is returned
+                        //     $('#resultsTable').addClass('d-none');
+                        // }
+
+                    }
+                });
+
+            }
+            $('.tradeCategroy, .js-example-basic-multiple-2, .js-example-basic-multiple-3').on('change', function() {
+                sendFilterData();
+            });
+
+        });
+    </script>
