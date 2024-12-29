@@ -1,98 +1,269 @@
-public function select($table, $conditions = [], $fields = '*', $limit = null, $orderby = null)
-    {
-        $sql = "SELECT $fields FROM $table";
-        if (!empty($conditions)) {
-            $whereClauses = [];
-            $params = [];
-            foreach ($conditions as $key => $value) {
-                $whereClauses[] = "$key = :$key";
-                $params[":$key"] = $value;
-            }
-            if (!empty($whereClauses)) {
-                $sql .= " WHERE " . implode(" AND ", $whereClauses);
-            }
+ public function filter($tc_values, $ds_values, $dt_values) {
+        // Start building the query
+        $sql = 'SELECT COUNT(dp.full_name) AS profile_count';
+    
+        // Add GROUP_CONCAT for trade category if $tc_values is not empty
+        if (!empty($tc_values)) {
+            $sql .= ', GROUP_CONCAT(DISTINCT tc.trade_category_nep) AS trade_category_nep';
         }
-        if ($orderby) {
-            $sql .= " ORDER BY $orderby";
+    
+        // Add GROUP_CONCAT for dog status if $ds_values is not empty
+        if (!empty($ds_values)) {
+            $sql .= ', GROUP_CONCAT(DISTINCT ds.dog_status_nep) AS dog_status_nep';
         }
-        if ($limit) {
-            $sql .= " LIMIT $limit";
+       
+    
+        // Base query from tbl_dog_profile table
+        $sql .= ' FROM tbl_dog_profile dp';
+    
+        // Join def_trade_category if $tc_values is not empty
+        if (!empty($tc_values)) {
+            $sql .= ' JOIN def_trade_category tc ON tc.tc_id = dp.tc_id_fk';
         }
-        $stmt = $this->dog_conn->prepare($sql);
-        if (!empty($params)) {
-            foreach ($params as $param => $value) {
-                $stmt->bindParam($param, $value);
-            }
+    
+        // Join def_dog_status if $ds_values is not empty
+        if (!empty($ds_values)) {
+            $sql .= ' JOIN def_dog_status ds ON ds.hs_id = dp.hs_id_fk';
         }
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return $results;
+        $params = [];  
+    
+        if (!empty($tc_values)) {
+            $placeholders = implode(',', array_fill(0, count($tc_values), '?'));// Generate placeholders for tc_values array
+            $sql .= ' WHERE dp.tc_id_fk IN (' . $placeholders . ')';
+            $params = array_merge($params, $tc_values);  // Add tc_values to the params array
+        }
+    
+        // Build the WHERE clause for hs_id_fk if $ds_values is not empty
+        if (!empty($ds_values)) {
+            // If tc_values are already in the WHERE clause, we need to append 'AND'
+            if (!empty($tc_values) ) {
+                $sql .= ' AND';
+            }else{ $sql .= ' WHERE ';}
+          
+            $placeholders = implode(',', array_fill(0, count($ds_values), '?'));  // Generate placeholders for ds_values array
+            $sql .= ' dp.hs_id_fk IN (' . $placeholders . ')';
+            $params = array_merge($params, $ds_values);  
+        }
         // echo $sql;
-    }
-
-
-    public function getCount($table, $conditions = [])
-    {
-        $sql = "SELECT COUNT(*) as total FROM $table";
-        if (!empty($conditions)) {
-            $whereClauses = [];
-            $params = [];
-            foreach ($conditions as $column => $value) {
-                $whereClauses[] = "$column = :$column";
-                $params[":$column"] = $value;
-            }
-            if (!empty($whereClauses)) {
-                $sql .= " WHERE " . implode(" AND ", $whereClauses);
-            }
-        }
         $stmt = $this->dog_conn->prepare($sql);
-        if (!empty($params)) {
-            foreach ($params as $param => $value) {
-                $stmt->bindParam($param, $value);
-            }
-        }
-        $stmt->execute();
+        $stmt->execute($params);  
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $test_count = $result['total'];
-        return $test_count;
-        // echo $sql;
+    
+        // Return the result in the expected format
+        return [
+            'count' => $result['profile_count'],
+            'trade_category_nep' => isset($result['trade_category_nep']) ? $result['trade_category_nep'] : null,
+            'dog_status_nep' => isset($result['dog_status_nep']) ? $result['dog_status_nep'] : null,
+        ];
     }
 
-    public function get_count_filter($table, $conditions1 = [])
-    {
-        $sql = "SELECT COUNT(*) as total FROM $table";
-        if (!empty($conditions)) {
-            $whereClauses = [];
-            $params = [];
+------------------------------------------------------------
+reprot_ajax.php
+<?php
 
-            foreach ($conditions as $column => $value) {
-                if (is_array($value)) {
-                    // Handle the IN clause for an array of values
-                    $placeholders = implode(",", array_fill(0, count($value), "?"));
-                    $whereClauses[] = "$column IN ($placeholders)";
-                    $params = array_merge($params, $value);
-                } else {
-                    // For non-array values, use = 
-                    $whereClauses[] = "$column = :$column";
-                    $params[":$column"] = $value;
-                }
-            }
+include('../config/db.php');
+// include(header_path);
 
-            if (!empty($whereClauses)) {
-                $sql .= " WHERE " . implode(" AND ", $whereClauses);
-            }
-        }
+$dog_obj = new User;
+// header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $ds_values = isset($_POST['hs_value']) ? $_POST['hs_value'] : [];
+    $tc_values = isset($_POST['tc_value']) ? $_POST['tc_value'] : [];
+    $dt_values = isset($_POST['dt_value']) ? $_POST['tc_value'] : [];
+  
+    // echo json_encode($ds_values);
+    // echo json_encode($tc_values);
+  
+    $result = $dog_obj->filter($tc_values, $ds_values, $dt_values);
+    // echo $result['count'];
+    // echo $result['trade_category_nep'];
+    // echo $result['dog_status_nep'];
 
-        // Prepare the query
-        $stmt = $this->dog_conn->prepare($sql);
-        if (!empty($params)) {
-            foreach ($params as $index => $value) {
-                $stmt->bindValue($index + 1, $value);  // Bind indexed parameters (start from 1)
-            }
-        }
-        // Execute the query and fetch the result
-        $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        // echo $sql;  
-        return $result['total'];
+
+     // Create a response array and encode it as JSON
+     $response = [
+        'count' => $result['count'],
+        'trade_category_nep' => $result['trade_category_nep'],
+        'dog_status_nep' => $result['dog_status_nep']
+    ];
+
+    // Send the response as JSON
+    echo json_encode($response);
+    
+}
+-------------------------------------------------
+
+filter_Report
+
+<?php
+include('../config/config.php');
+include(header_path);
+$dog_obj = new User;
+?>
+<style>
+    /* Change background color and font color of selected options */
+    .select2-selection__choice {
+        background-color: #424c56 !important;
+        /* Green background */
+        color: white !important;
+        /* White text */
     }
+
+    /* Optional: Change the background of the dropdown menu when it's open */
+    .select2-results__option[aria-selected=true] {
+        background-color: #424c56 !important;
+        color: white !important;
+    }
+
+    /* Optional: Change the border color of the dropdown */
+    .select2-selection {
+        border-color: #424c56 !important;
+    }
+</style>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+
+        <?php include_once(navbar_path) ?>
+        <?php include_once(sidebar_path) ?>
+
+        <div class="content-wrapper">
+            <!-- Content Header (Page header) -->
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1 class="m-0">{print uname}</h1>
+                        </div><!-- /.col -->
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                <li class="breadcrumb-item active">Dashboard v1</li>
+                            </ol>
+                        </div><!-- /.col -->
+                    </div><!-- /.row -->
+                </div><!-- /.container-fluid -->
+            </div>
+            <!-- /.content-header -->
+
+            <!-- Main content -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-control trade" name="subcategories[]" multiple="multiple">
+                                <?php
+                                $conditions = ['tc_status' => 'Y'];
+                                $subcatdata = $dog_obj->select('def_trade_category', $conditions, 'trade_category_nep, tc_id');
+                                foreach ($subcatdata as $scd): ?>
+                                    <option value="<?php echo $scd['tc_id']; ?>"><?php echo $scd['trade_category_nep']; ?></option>
+                                <?php endforeach ?>
+                            </select>
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <select class="form-control status" name="status[]" multiple="multiple">
+                                <?php
+                                $conditions = ['hs_status' => 'Y'];
+                                $subcatdata = $dog_obj->select('def_dog_status', $conditions, 'dog_status_nep, hs_id');
+                                foreach ($subcatdata as $scd): ?>
+                                    <option value="<?php echo $scd['hs_id']; ?>"><?php echo $scd['dog_status_nep']; ?></option>
+                                <?php endforeach ?>
+                            </select>
+
+                        </div>
+
+                        <div class="col-md-3">
+                            <select class="form-control type" name="type[]" multiple="multiple">
+                                <?php
+                                $conditions = ['ht_status' => 'Y'];
+                                $subcatdata = $dog_obj->select('def_dog_types', $conditions, 'dog_type_nep, ht_id');
+                                foreach ($subcatdata as $scd): ?>
+                                    <option value="<?php echo $scd['ht_id']; ?>"><?php echo $scd['dog_type_nep']; ?></option>
+                                <?php endforeach ?>
+                            </select>
+                        </div>
+
+
+
+                        <div class="col-md-3">
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Main row -->
+                    <div class="row">
+                        <div id="profileCount"></div>
+                        <div id="tradeCategory"></div>
+                        <div id="dogStatus"></div>
+                        <div id="dogType"></div>
+                        <div class="col-md-6 mt-4">
+                            <canvas id="myChart" style="width:100%;max-width:600px"></canvas>
+                        </div>
+                    </div>
+                    <!-- /.row (main row) -->
+                </div>
+            </section>
+        </div>
+    </div>
+    <?php
+    include(footer_path);
+    ?>
+
+    <script>
+        $(document).ready(function() {
+            $('.trade').select2({
+                placeholder: "Choose Trade",
+                allowClear: true
+            });
+            $('.status').select2({
+                placeholder: "Choose Status",
+                allowClear: true
+            });
+            $('.type').select2({
+                placeholder: "Choose Type",
+                allowClear: true
+            });
+
+            function sendFilterData() {
+                var tc_value = $('.trade').val();
+                var hs_value = $('.status').val();
+                var dt_value = $('.status').val();
+
+                // console.log(hs_value);
+                // console.log(tc_value);
+                $.ajax({
+                    url: '<?php echo base_url ?>d_pages/report_ajax.php',
+                    type: 'POST',
+                    data: {
+                        tc_value: tc_value,
+                        hs_value: hs_value, dt_value: dt_value
+                    },
+                    success: function(response) {
+
+                        // console.log(response);
+                        let result = JSON.parse(response);
+
+                        // Display the results in the frontend
+                        $('#profileCount').text('Profile Count: ' + result.count);
+                        $('#tradeCategory').text('Trade Categories: ' + result.trade_category_nep);
+                        $('#dogStatus').text('Dog Status: ' + result.dog_status_nep);
+
+                    }
+                });
+
+            }
+            $('.status, .trade, .type').on('change', function() {
+                sendFilterData();
+                // alert('test');
+            });
+
+        });
+    </script>
+
+
+    
