@@ -1,4 +1,16 @@
- public function filter($tc_values, $ds_values, $dt_values) {
+SELECT COUNT(dp.full_name) AS profile_count
+,GROUP_CONCAT(DISTINCT tc.trade_category_nep) AS trade_category_nep
+,GROUP_CONCAT(DISTINCT ds.dog_status_nep) AS dog_status_nep
+,GROUP_CONCAT(DISTINCT dt.dog_type_nep) AS dog_type_nep
+FROM tbl_dog_profile dp
+JOIN def_trade_category tc ON tc.tc_id = dp.tc_id_fk
+JOIN def_dog_status ds ON ds.hs_id = dp.hs_id_fk
+JOIN def_dog_types dt ON dt.ht_id = dp.hs_id_fk
+WHERE  dp.tc_id_fk IN (1, 4) AND dp.hs_id_fk IN (1) 
+AND dp.ht_id_fk IN (1);
+---------------
+
+public function filter($tc_values, $ds_values, $dt_values) {
         // Start building the query
         $sql = 'SELECT COUNT(dp.full_name) AS profile_count';
     
