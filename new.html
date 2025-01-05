@@ -1,3 +1,21 @@
+RewriteRule ^h/general$ d_pages/h_general_report.php [L]
+
+
+# Handle any other undefined routes (404 error)
+
+ErrorDocument 404 /myreport/404.php
+
+
+<?php
+// Optionally redirect back to the homepage after a few seconds
+
+echo "<h1>Page Not Found</h1>";
+echo "<p>The page you are looking for doesn't exist. You will be redirected to the homepage shortly.</p>";
+?>
+
+
+
+
 SELECT COUNT(dp.full_name) AS profile_count
 ,GROUP_CONCAT(DISTINCT tc.trade_category_nep) AS trade_category_nep
 ,GROUP_CONCAT(DISTINCT ds.dog_status_nep) AS dog_status_nep
