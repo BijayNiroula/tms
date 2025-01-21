@@ -1,299 +1,84 @@
-RewriteRule ^h/general$ d_pages/h_general_report.php [L]
+<!DOCTYPE html>
+<html lang="en">
 
-
-# Handle any other undefined routes (404 error)
-
-ErrorDocument 404 /myreport/404.php
-
-
-<?php
-// Optionally redirect back to the homepage after a few seconds
-
-echo "<h1>Page Not Found</h1>";
-echo "<p>The page you are looking for doesn't exist. You will be redirected to the homepage shortly.</p>";
-?>
-
-
-
-
-SELECT COUNT(dp.full_name) AS profile_count
-,GROUP_CONCAT(DISTINCT tc.trade_category_nep) AS trade_category_nep
-,GROUP_CONCAT(DISTINCT ds.dog_status_nep) AS dog_status_nep
-,GROUP_CONCAT(DISTINCT dt.dog_type_nep) AS dog_type_nep
-FROM tbl_dog_profile dp
-JOIN def_trade_category tc ON tc.tc_id = dp.tc_id_fk
-JOIN def_dog_status ds ON ds.hs_id = dp.hs_id_fk
-JOIN def_dog_types dt ON dt.ht_id = dp.hs_id_fk
-WHERE  dp.tc_id_fk IN (1, 4) AND dp.hs_id_fk IN (1) 
-AND dp.ht_id_fk IN (1);
----------------
-
-public function filter($tc_values, $ds_values, $dt_values) {
-        // Start building the query
-        $sql = 'SELECT COUNT(dp.full_name) AS profile_count';
-    
-        // Add GROUP_CONCAT for trade category if $tc_values is not empty
-        if (!empty($tc_values)) {
-            $sql .= ', GROUP_CONCAT(DISTINCT tc.trade_category_nep) AS trade_category_nep';
-        }
-    
-        // Add GROUP_CONCAT for dog status if $ds_values is not empty
-        if (!empty($ds_values)) {
-            $sql .= ', GROUP_CONCAT(DISTINCT ds.dog_status_nep) AS dog_status_nep';
-        }
-       
-    
-        // Base query from tbl_dog_profile table
-        $sql .= ' FROM tbl_dog_profile dp';
-    
-        // Join def_trade_category if $tc_values is not empty
-        if (!empty($tc_values)) {
-            $sql .= ' JOIN def_trade_category tc ON tc.tc_id = dp.tc_id_fk';
-        }
-    
-        // Join def_dog_status if $ds_values is not empty
-        if (!empty($ds_values)) {
-            $sql .= ' JOIN def_dog_status ds ON ds.hs_id = dp.hs_id_fk';
-        }
-        $params = [];  
-    
-        if (!empty($tc_values)) {
-            $placeholders = implode(',', array_fill(0, count($tc_values), '?'));// Generate placeholders for tc_values array
-            $sql .= ' WHERE dp.tc_id_fk IN (' . $placeholders . ')';
-            $params = array_merge($params, $tc_values);  // Add tc_values to the params array
-        }
-    
-        // Build the WHERE clause for hs_id_fk if $ds_values is not empty
-        if (!empty($ds_values)) {
-            // If tc_values are already in the WHERE clause, we need to append 'AND'
-            if (!empty($tc_values) ) {
-                $sql .= ' AND';
-            }else{ $sql .= ' WHERE ';}
-          
-            $placeholders = implode(',', array_fill(0, count($ds_values), '?'));  // Generate placeholders for ds_values array
-            $sql .= ' dp.hs_id_fk IN (' . $placeholders . ')';
-            $params = array_merge($params, $ds_values);  
-        }
-        // echo $sql;
-        $stmt = $this->dog_conn->prepare($sql);
-        $stmt->execute($params);  
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-        // Return the result in the expected format
-        return [
-            'count' => $result['profile_count'],
-            'trade_category_nep' => isset($result['trade_category_nep']) ? $result['trade_category_nep'] : null,
-            'dog_status_nep' => isset($result['dog_status_nep']) ? $result['dog_status_nep'] : null,
-        ];
-    }
-
-------------------------------------------------------------
-reprot_ajax.php
-<?php
-
-include('../config/db.php');
-// include(header_path);
-
-$dog_obj = new User;
-// header('Content-Type: application/json');
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $ds_values = isset($_POST['hs_value']) ? $_POST['hs_value'] : [];
-    $tc_values = isset($_POST['tc_value']) ? $_POST['tc_value'] : [];
-    $dt_values = isset($_POST['dt_value']) ? $_POST['tc_value'] : [];
-  
-    // echo json_encode($ds_values);
-    // echo json_encode($tc_values);
-  
-    $result = $dog_obj->filter($tc_values, $ds_values, $dt_values);
-    // echo $result['count'];
-    // echo $result['trade_category_nep'];
-    // echo $result['dog_status_nep'];
-
-
-     // Create a response array and encode it as JSON
-     $response = [
-        'count' => $result['count'],
-        'trade_category_nep' => $result['trade_category_nep'],
-        'dog_status_nep' => $result['dog_status_nep']
-    ];
-
-    // Send the response as JSON
-    echo json_encode($response);
-    
-}
--------------------------------------------------
-
-filter_Report
-
-<?php
-include('../config/config.php');
-include(header_path);
-$dog_obj = new User;
-?>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<!-- Styles -->
 <style>
-    /* Change background color and font color of selected options */
-    .select2-selection__choice {
-        background-color: #424c56 !important;
-        /* Green background */
-        color: white !important;
-        /* White text */
-    }
-
-    /* Optional: Change the background of the dropdown menu when it's open */
-    .select2-results__option[aria-selected=true] {
-        background-color: #424c56 !important;
-        color: white !important;
-    }
-
-    /* Optional: Change the border color of the dropdown */
-    .select2-selection {
-        border-color: #424c56 !important;
+    #chartdiv {
+        width: 100%;
+        height: 500px;
     }
 </style>
 
-<body class="hold-transition sidebar-mini layout-fixed">
-    <div class="wrapper">
-
-        <?php include_once(navbar_path) ?>
-        <?php include_once(sidebar_path) ?>
-
-        <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
-            <div class="content-header">
-                <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1 class="m-0">{print uname}</h1>
-                        </div><!-- /.col -->
-                        <div class="col-sm-6">
-                            <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="#">Home</a></li>
-                                <li class="breadcrumb-item active">Dashboard v1</li>
-                            </ol>
-                        </div><!-- /.col -->
-                    </div><!-- /.row -->
-                </div><!-- /.container-fluid -->
-            </div>
-            <!-- /.content-header -->
-
-            <!-- Main content -->
-            <section class="content">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <select class="form-control trade" name="subcategories[]" multiple="multiple">
-                                <?php
-                                $conditions = ['tc_status' => 'Y'];
-                                $subcatdata = $dog_obj->select('def_trade_category', $conditions, 'trade_category_nep, tc_id');
-                                foreach ($subcatdata as $scd): ?>
-                                    <option value="<?php echo $scd['tc_id']; ?>"><?php echo $scd['trade_category_nep']; ?></option>
-                                <?php endforeach ?>
-                            </select>
-
-                        </div>
-
-                        <div class="col-md-3">
-
-                            <select class="form-control status" name="status[]" multiple="multiple">
-                                <?php
-                                $conditions = ['hs_status' => 'Y'];
-                                $subcatdata = $dog_obj->select('def_dog_status', $conditions, 'dog_status_nep, hs_id');
-                                foreach ($subcatdata as $scd): ?>
-                                    <option value="<?php echo $scd['hs_id']; ?>"><?php echo $scd['dog_status_nep']; ?></option>
-                                <?php endforeach ?>
-                            </select>
-
-                        </div>
-
-                        <div class="col-md-3">
-                            <select class="form-control type" name="type[]" multiple="multiple">
-                                <?php
-                                $conditions = ['ht_status' => 'Y'];
-                                $subcatdata = $dog_obj->select('def_dog_types', $conditions, 'dog_type_nep, ht_id');
-                                foreach ($subcatdata as $scd): ?>
-                                    <option value="<?php echo $scd['ht_id']; ?>"><?php echo $scd['dog_type_nep']; ?></option>
-                                <?php endforeach ?>
-                            </select>
-                        </div>
+<body>
 
 
 
-                        <div class="col-md-3">
+    <!-- HTML -->
+    <div id="chartdiv"></div>
+</body>
 
-                        </div>
+<?php
 
-                    </div>
+$breed = ['Male Dog', 'Female Dog', 'Total Dogs', 'Healthy Dogs', 'Sick Dogs'];
+$count = [100, 150, 200, 100, 50];
+?>
 
 
-                    <!-- Main row -->
-                    <div class="row">
-                        <div id="profileCount"></div>
-                        <div id="tradeCategory"></div>
-                        <div id="dogStatus"></div>
-                        <div id="dogType"></div>
-                        <div class="col-md-6 mt-4">
-                            <canvas id="myChart" style="width:100%;max-width:600px"></canvas>
-                        </div>
-                    </div>
-                    <!-- /.row (main row) -->
-                </div>
-            </section>
-        </div>
-    </div>
-    <?php
-    include(footer_path);
-    ?>
+</html>
 
-    <script>
-        $(document).ready(function() {
-            $('.trade').select2({
-                placeholder: "Choose Trade",
-                allowClear: true
-            });
-            $('.status').select2({
-                placeholder: "Choose Status",
-                allowClear: true
-            });
-            $('.type').select2({
-                placeholder: "Choose Type",
-                allowClear: true
-            });
+<!-- Resources -->
+<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+<script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<!-- Chart code -->
+<script>
+    var breed = <?php echo json_encode($breed); ?>;
+    console.log(breed);
+    var count = <?php echo json_encode($count); ?>;
+    console.log(count);
 
-            function sendFilterData() {
-                var tc_value = $('.trade').val();
-                var hs_value = $('.status').val();
-                var dt_value = $('.status').val();
-
-                // console.log(hs_value);
-                // console.log(tc_value);
-                $.ajax({
-                    url: '<?php echo base_url ?>d_pages/report_ajax.php',
-                    type: 'POST',
-                    data: {
-                        tc_value: tc_value,
-                        hs_value: hs_value, dt_value: dt_value
-                    },
-                    success: function(response) {
-
-                        // console.log(response);
-                        let result = JSON.parse(response);
-
-                        // Display the results in the frontend
-                        $('#profileCount').text('Profile Count: ' + result.count);
-                        $('#tradeCategory').text('Trade Categories: ' + result.trade_category_nep);
-                        $('#dogStatus').text('Dog Status: ' + result.dog_status_nep);
-
-                    }
-                });
-
-            }
-            $('.status, .trade, .type').on('change', function() {
-                sendFilterData();
-                // alert('test');
-            });
-
+    am4core.ready(function() {
+        // Disable the amCharts logo
+        am4core.addLicense("CHARTJS"); // This will remove the logo from appearing
+        // Themes begin
+        am4core.useTheme(am4themes_animated);
+        // Themes end
+        var chart = am4core.create("chartdiv", am4charts.PieChart3D);
+        chart.hiddenState.properties.opacity = 0; // this creates initial fade-in
+        // Dynamically create chart data from breed and count arrays
+        var chartData = breed.map(function(b, index) {
+            return {
+                country: b,
+                litres: count[index]
+            };
         });
-    </script>
+
+        chart.data = chartData;
+
+        var series = chart.series.push(new am4charts.PieSeries3D());
+        series.dataFields.value = "litres";
+        series.dataFields.category = "country";
+
+        // Modify the labels to show breed and count instead of percentage
+        series.labels.template.text = "{category}=> {value}";
+        // Remove percentage from labels (default behavior)
+        series.slices.template.tooltipText = "{category}: {value}";
+        // Optionally, remove the legend if needed
+        // chart.legend = null;
+        // Define a color palette (can be any valid CSS colors)
+        var colorPalette = ["#FF5733", "#33FF57", "#3357FF", "#FFD700", "#8A2BE2", "#FF6347", "#B0E0E6"];
+
+        // Dynamically assign colors to each slice based on the index of the chart data
+        series.colors.list = chartData.map(function(item, index) {
+            return am4core.color(colorPalette[index % colorPalette.length]); // Loop through colors if more slices than colors
+        });
 
 
-    
+    }); // end am4core.ready()
+</script>
