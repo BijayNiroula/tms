@@ -1,10 +1,9 @@
 searcthhh=------------
 <?php
 
-// include('config/db.php');
-
-include_once 'config/config.php';
+include_once 'config/db.php';
 include_once(header_path);
+
 $both_obj = new User;
 
 
@@ -166,36 +165,26 @@ $both_obj = new User;
 
                                             <tr>
                                                 <td>२०.</td>
-                                                <?php $v_conditions = ['is_active' => 'Y', 'hp_id' => 138];
+                                                <?php $v_conditions = ['is_active' => 'Y', 'hp_id' => $d['hp_id']];
                                                 $v_count = $both_obj->getCount('tbl_vaccine', $v_conditions);
                                                 echo $v_count;
-                                                // print_r($v_conditions) ;
-                                                // $sql = "SELECT COUNT(*) AS total FROM tbl_vaccine WHERE hp_id=138 AND is_active = 'Y'";
-                                                // $stmt = $both_obj->prepare($sql);
-                                                // $stmt -> execute();
-                                                // $total = $stmt -> fetch(PDO::FETCH_ASSOC);
                                                 ?>
                                                 <td colspan="4">खाेप सम्बन्धि विवरण (Total vaccinated number till now: <?php echo $v_count; ?>)<span class="badge badge-light myvaccine" data-id="<?php echo $d['hp_id'] ?>">Show more</span>
                                                 </td>
                                             </tr>
+                                                                          
+                                            <table id="myvaccine1" class="table table-bordered table-striped table-hover">
+                                                <thead>
+                                                    
+                                                </thead>
+                                                <tbody>
+                                                    <!-- Vaccine data rows will go here -->
+                                                </tbody>
+                                            </table>
 
-                                            <td colspan="5">
-                                                <table width="100%" border="0" cellpadding="1" cellspacing="0" class="tableroundbdr" id="myvaccine1" style="display:none">
-                                                    <tbody>
-                                                        <tr>
-                                                            <th>Vaccine Name</th>
-                                                            <th>Vaccination Date</th>
-                                                            <th>Remarks</th>
-                                                            <th>Next Vaccination Date</th>
-                                                        </tr>
-                                                        <tr>
+                                         
 
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </td>
-
-
+                                                 
 
                                         </tbody>
                                     </table>
@@ -374,6 +363,14 @@ $both_obj = new User;
                             $('#myvaccine1 tbody').empty(); // Clear existing rows
 
                             if (data && data.length > 0) {
+                                // Add column headings
+                                var headings = '<tr>' +
+                                    '<th>Vaccine Name</th>' +
+                                    '<th>Vaccine Date</th>' +
+                                    '<th>Batch Number</th>' +
+                                    '<th>Next Vaccine Date</th>' +
+                                    '</tr>';
+                                $('#myvaccine1 thead').html(headings); // Append the headings to the table header
                                 // Append each vaccine record to the table
                                 $.each(data, function(index, vaccine) {
                                     var row = '<tr>' +
@@ -398,8 +395,6 @@ $both_obj = new User;
             }
         });
     </script>
-
-
 
 
 
